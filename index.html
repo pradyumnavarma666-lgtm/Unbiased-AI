@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unbiased AI Decision System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="overlay" id="loading-overlay">
+        <div class="loader">
+            <div class="glow-ring"></div>
+            <p>Analyzing Bias...</p>
+        </div>
+    </div>
+
+    <header class="glass-panel">
+        <div class="logo">
+            <i class="fas fa-brain fa-spin-pulse"></i> Unbiased AI Decision System
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline" id="btn-real-world"><i class="fas fa-globe"></i> Scenarios</button>
+            <button class="btn btn-primary" id="btn-fix-bias" style="display: none;"><i class="fas fa-magic"></i> One-Click Bias Fix</button>
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <!-- Sidebar / Upload Panel -->
+        <aside class="sidebar glass-panel">
+            <h2><i class="fas fa-upload"></i> Upload Data</h2>
+            <div class="upload-area" id="upload-area">
+                <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                <p>Drag & Drop Dataset (.csv) or <span class="highlight">Click to Browse</span></p>
+                <input type="file" id="file-input" accept=".csv" hidden>
+            </div>
+            
+            <div class="form-group mt-4">
+                <label>Target Column:</label>
+                <input type="text" id="target-col" placeholder="e.g. loan_approved" class="glow-input">
+            </div>
+
+            <div class="detected-features mt-4" id="detected-features-container" style="display: none;">
+                <h3><i class="fas fa-exclamation-triangle"></i> Sensitive Features</h3>
+                <ul id="sensitive-features-list"></ul>
+            </div>
+            
+            <button class="btn btn-primary w-100 mt-4" id="btn-analyze"><i class="fas fa-chart-line"></i> Analyze Model</button>
+        </aside>
+
+        <!-- Main Content Panel -->
+        <section class="content">
+            
+            <!-- Alert System -->
+            <div id="alert-container"></div>
+
+            <div class="top-cards">
+                <div class="card glass-panel" id="card-score">
+                    <h3>Bias Fairness Score</h3>
+                    <div class="score-display">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" id="score-circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.35" class="percentage" id="score-text">--%</text>
+                        </svg>
+                        <div class="risk-label" id="risk-level">Pending</div>
+                    </div>
+                </div>
+
+                <div class="card glass-panel">
+                    <h3>Accuracy</h3>
+                    <div class="metric-value"><span id="acc-text">--</span>%</div>
+                    <p class="metric-desc">Overall Model Accuracy</p>
+                </div>
+
+                <div class="card glass-panel">
+                    <h3>Disparate Impact</h3>
+                    <div class="metric-value"><span id="di-text">--</span></div>
+                    <p class="metric-desc">Ideal is 1.0</p>
+                </div>
+            </div>
+
+            <div class="charts-container mt-4">
+                <div class="card glass-panel chart-box">
+                    <h3><i class="fas fa-balance-scale"></i> Accuracy vs Fairness Tradeoff</h3>
+                    <canvas id="tradeoff-chart"></canvas>
+                </div>
+                <div class="card glass-panel chart-box">
+                    <h3><i class="fas fa-fire"></i> Feature Importance (Explainable AI)</h3>
+                    <canvas id="heatmap-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="charts-container mt-4">
+                <div class="card glass-panel chart-box">
+                    <h3><i class="fas fa-chart-area"></i> Dynamic Bias Tracking</h3>
+                    <canvas id="tracking-chart"></canvas>
+                </div>
+                
+                <div class="card glass-panel chart-box" id="what-if-panel">
+                    <h3><i class="fas fa-flask"></i> What-If Simulator</h3>
+                    <div class="simulator-controls">
+                        <p class="text-small text-muted mb-3">Adjust feature to see impact on bias score.</p>
+                        <div class="form-group">
+                            <label>Feature to tweak:</label>
+                            <select id="sim-feature" class="glow-input">
+                                <option value="">Select Feature</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Adjustment Factor:</label>
+                            <input type="range" id="sim-factor" min="-50" max="50" value="0" class="neon-slider">
+                            <span id="sim-val">0%</span>
+                        </div>
+                        <button class="btn btn-outline w-100" id="btn-simulate">Run Simulation</button>
+                    </div>
+                    <div class="sim-result mt-3" id="sim-result" style="display: none;">
+                        <p>Predicted New Score: <span id="sim-new-score" class="highlight"></span></p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div id="scenario-modal" class="modal glass-panel">
+        <div class="modal-content">
+            <span class="close" id="close-modal">&times;</span>
+            <h2>Select Real-World Scenario</h2>
+            <div class="scenario-grid">
+                <div class="scenario-card" data-scenario="hiring">
+                    <i class="fas fa-briefcase fa-2x"></i>
+                    <h4>Hiring</h4>
+                    <p>Predict job suitability while minimizing gender/race bias.</p>
+                </div>
+                <div class="scenario-card" data-scenario="loan">
+                    <i class="fas fa-money-check-alt fa-2x"></i>
+                    <h4>Loan Approval</h4>
+                    <p>Fair credit scoring across diverse demographics.</p>
+                </div>
+                <div class="scenario-card" data-scenario="health">
+                    <i class="fas fa-heartbeat fa-2x"></i>
+                    <h4>Healthcare</h4>
+                    <p>Equitable medical risk assessment.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
